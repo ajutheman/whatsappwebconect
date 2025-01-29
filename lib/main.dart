@@ -75,9 +75,6 @@
 // //   }
 // // }
 
-
-
-
 // import 'package:flutter/material.dart';
 // import 'dart:convert'; // For JSON encoding
 // import 'package:http/http.dart' as http; // For API requests
@@ -168,7 +165,6 @@
 //     );
 //   }
 // }
-
 
 // import 'package:flutter/material.dart';
 // import 'package:shared_preferences/shared_preferences.dart';
@@ -390,8 +386,6 @@
 //   }
 // }
 
-
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -473,7 +467,6 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() {
         _currentPosition = position;
       });
-
     } catch (e) {
       print("Error fetching location: $e");
     }
@@ -481,7 +474,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchUsers() async {
     try {
-      final response = await http.get(Uri.parse('https://jsonplaceholder.typicode.com/users'));
+      final response = await http
+          .get(Uri.parse('https://jsonplaceholder.typicode.com/users'));
 
       if (response.statusCode == 200) {
         final List<dynamic> onlineUsers = jsonDecode(response.body);
@@ -489,10 +483,15 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           users = onlineUsers.map((user) {
             return {
+              'id': user['id'],
               'name': user['name'],
               'email': user['email'],
-              'latitude': double.tryParse(user['address']['geo']['lat'].toString()) ?? 0.0,
-              'longitude': double.tryParse(user['address']['geo']['lng'].toString()) ?? 0.0,
+              'latitude':
+                  double.tryParse(user['address']['geo']['lat'].toString()) ??
+                      0.0,
+              'longitude':
+                  double.tryParse(user['address']['geo']['lng'].toString()) ??
+                      0.0,
               'phone': user['phone'],
             };
           }).toList();
@@ -541,16 +540,16 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: users.length,
               itemBuilder: (context, index) {
                 final user = users[index];
-                double distance = _calculateDistance(user['latitude'], user['longitude']);
+                double distance =
+                    _calculateDistance(user['latitude'], user['longitude']);
                 return Card(
                   child: ListTile(
                     title: Text(user['name']),
                     subtitle: Text(user['email']),
                     trailing: Text(
-                      '${user['latitude']}, ${user['longitude']} \nDistance: ${distance.toStringAsFixed(2)} m'
-                    ),
+                        '${user['latitude']}, ${user['longitude']} \nDistance: ${distance.toStringAsFixed(2)} m'),
                     onTap: () async {
-                      final todos = await fetchTodos(user['name']);
+                      final todos = await fetchTodos(user['id']);
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -568,13 +567,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> fetchTodos(String userName) async {
+  // Fetch to-dos based on user ID
+  Future<List<Map<String, dynamic>>> fetchTodos(int userId) async {
     try {
-      final response = await http.get(Uri.parse('https://jsonplaceholder.typicode.com/todos'));
+      final response = await http
+          .get(Uri.parse('https://jsonplaceholder.typicode.com/todos'));
       if (response.statusCode == 200) {
         final List<dynamic> todos = jsonDecode(response.body);
         final filteredTodos = todos.where((todo) {
-          return todo['title'].contains(userName);
+          return todo['userId'] == userId; // Filter by userId
         }).toList();
 
         return filteredTodos.map((todo) {
@@ -591,11 +592,61 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// class UserDetailsScreen extends StatelessWidget {
+//   final Map<String, dynamic> user;
+//   final List<Map<String, dynamic>> todos;
+
+//   const UserDetailsScreen({Key? key, required this.user, required this.todos}) : super(key: key);
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: const Text('User Details'),
+//       ),
+//       body: Padding(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             Text('Name: ${user['name']}', style: const TextStyle(fontSize: 18)),
+//             const SizedBox(height: 8),
+//             Text('Email: ${user['email']}', style: const TextStyle(fontSize: 18)),
+//             const SizedBox(height: 8),
+//             Text('Phone: ${user['phone']}', style: const TextStyle(fontSize: 18)),
+//             const SizedBox(height: 16),
+//             const Text('To-Dos:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+//             const SizedBox(height: 8),
+//             if (todos.isEmpty)
+//               const Text('No To-Dos available.')
+//             else
+//               ListView.builder(
+//                 shrinkWrap: true,
+//                 itemCount: todos.length,
+//                 itemBuilder: (context, index) {
+//                   final todo = todos[index];
+//                   return ListTile(
+//                     title: Text(todo['title']),
+//                     trailing: Icon(
+//                       todo['completed'] ? Icons.check_box : Icons.check_box_outline_blank,
+//                       color: todo['completed'] ? Colors.green : Colors.red,
+//                     ),
+//                   );
+//                 },
+//               ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class UserDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> user;
   final List<Map<String, dynamic>> todos;
 
-  const UserDetailsScreen({Key? key, required this.user, required this.todos}) : super(key: key);
+  const UserDetailsScreen({Key? key, required this.user, required this.todos})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -610,29 +661,38 @@ class UserDetailsScreen extends StatelessWidget {
           children: [
             Text('Name: ${user['name']}', style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
-            Text('Email: ${user['email']}', style: const TextStyle(fontSize: 18)),
+            Text('Email: ${user['email']}',
+                style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
-            Text('Phone: ${user['phone']}', style: const TextStyle(fontSize: 18)),
+            Text('Phone: ${user['phone']}',
+                style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 16),
-            const Text('To-Dos:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const Text('To-Dos:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            if (todos.isEmpty)
-              const Text('No To-Dos available.')
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                itemCount: todos.length,
-                itemBuilder: (context, index) {
-                  final todo = todos[index];
-                  return ListTile(
-                    title: Text(todo['title']),
-                    trailing: Icon(
-                      todo['completed'] ? Icons.check_box : Icons.check_box_outline_blank,
-                      color: todo['completed'] ? Colors.green : Colors.red,
+            Expanded(
+              child: todos.isEmpty
+                  ? const Center(child: Text('No To-Dos available.'))
+                  : ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: (context, index) {
+                        final todo = todos[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            title: Text(todo['title']),
+                            trailing: Icon(
+                              todo['completed']
+                                  ? Icons.check_box
+                                  : Icons.check_box_outline_blank,
+                              color:
+                                  todo['completed'] ? Colors.green : Colors.red,
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
+            ),
           ],
         ),
       ),
